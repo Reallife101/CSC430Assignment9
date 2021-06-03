@@ -4,7 +4,7 @@ using Test
 #----------------Data Definitions--------------
 #;ExprC: Function definitions, application of functions, ifs, real, str and sym
 struct LamC{T} 
-	args::Vector{String}
+	args::Vector{Char}
 	body::T
 end
 
@@ -22,6 +22,12 @@ end
 ExprC = Union{Number, Char, String, LamC, AppC, IfC}
 
 #Values
+struct ClosV{T}
+	args::Vector{Char}
+	body::ExprC
+	env::T
+end
+
 Value = Union{Number, String, Bool}
 
 #Environment: List of Binding
@@ -45,6 +51,8 @@ function interp(e::ExprC, env::Environment)
 		return e
 	elseif e isa Char
 		return lookup(e, env)
+	elseif e isa LamC
+		return ClosV{Environment}(e.args, e.body, env)
 	else e isa IfC
 		return if interp(e.a, env) interp(e.b, env) else interp(e.c, env) end
 	end
@@ -67,4 +75,5 @@ end
 @test interp(1, baseenv) == 1 
 @test interp("hi", baseenv) == "hi" 
 @test interp(IfC{ExprC}('t', 1, 2), baseenv) == 1 
+@test typeof(interp(LamC{ExprC}(['t'], 2), baseenv)) == ClosV{Environment} 
 
