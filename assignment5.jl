@@ -19,21 +19,21 @@ struct IfC{T}
 	c::T
 end
 
-ExprC = Union{Number, Bool, String, LamC, AppC, IfC}
+ExprC = Union{Number, Char, String, LamC, AppC, IfC}
 
 #Values
 Value = Union{Number, String, Bool}
 
 #Environment: List of Binding
 struct Binding
-	name::String
+	name::Char
 	value:: Value
 end
 Environment = Vector{Binding}
 
 #-------------- Base Environment --------------
-baseenv = [Binding("true", true),
-			Binding("false", false)]
+baseenv = [Binding('t', true),
+			Binding('f', false)]
 			# Binding("+", +),
 			# Binding("-", -),
 			# Binding("*", *),
@@ -43,17 +43,28 @@ baseenv = [Binding("true", true),
 function interp(e::ExprC, env::Environment)
 	if e isa String || e isa Number 
 		return e
+	elseif e isa Char
+		return lookup(e, env)
 	else e isa IfC
-		return if e.a e.b else e.c end
+		return if interp(e.a, env) interp(e.b, env) else interp(e.c, env) end
 	end
 end
 
+function lookup(c::Char, env::Environment)
+	for b in env
+		if b.name == c
+			return b.value
+		end
+	end
+	error("GIYA: char not in env")
+end
+
 #-------------- Testing ----------------
-@test typeof(Binding("true", true)) == Binding
+@test typeof(Binding('t', true)) == Binding
 @test 3.121321 isa ExprC
 
 #Test interp 
 @test interp(1, baseenv) == 1 
 @test interp("hi", baseenv) == "hi" 
-@test interp(IfC{ExprC}(true, 1, 2), baseenv) == 1 
+@test interp(IfC{ExprC}('t', 1, 2), baseenv) == 1 
 
